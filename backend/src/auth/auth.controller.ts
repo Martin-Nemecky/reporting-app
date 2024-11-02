@@ -24,7 +24,6 @@ export class AuthController {
     return this.authService.signIn(signInDto.username, signInDto.password);
   }
 
-  @Public()
   @UseGuards(AuthGuard)
   @Get('profile')
   async getProfile(@Request() req: Request & { userPayload: UserPayload }) {
