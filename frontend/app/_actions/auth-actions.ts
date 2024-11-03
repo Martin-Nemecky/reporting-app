@@ -3,11 +3,15 @@
 import { redirect } from "next/navigation";
 import { createSession, deleteSession } from "../_lib/session";
 import { getProfile, signIn } from "../_lib/api";
+import { Profile } from "../_lib/types";
 
-export async function logIn(username: string, password: string) {
+export async function logIn(username: string, password: string): Promise<Profile> {
   const signInResult = await signIn(username, password);
-  const user = await getProfile(signInResult.access_token);
-  await createSession(user.id);
+  // console.log(`Log in: ${JSON.stringify(signInResult)}`);
+  const profile = await getProfile(signInResult.accessToken);
+
+  await createSession(profile.id, signInResult.accessToken);
+  return profile;
 }
 
 export async function signOut() {

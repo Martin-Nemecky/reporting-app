@@ -4,6 +4,7 @@ import { logIn } from "@/app/_actions/auth-actions";
 import { Button, TextField } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Controller, useForm } from "react-hook-form";
+import { useProfileDispatch } from "../../_contexts/profile-context";
 
 type FormValues = {
   username: string;
@@ -12,6 +13,7 @@ type FormValues = {
 
 export default function LoginForm() {
   const router = useRouter();
+  const profileDispatch = useProfileDispatch()!;
   const searchParams = useSearchParams();
   const {
     handleSubmit,
@@ -31,7 +33,9 @@ export default function LoginForm() {
     event.preventDefault();
 
     try {
-      await logIn(data.username, data.password);
+      const profile = await logIn(data.username, data.password);
+      console.log(`Profile: ${JSON.stringify(profile)}`);
+      profileDispatch(profile);
       router.push(searchParams.get("from") || "reports/");
     } catch (error: unknown) {
       resetField("password");

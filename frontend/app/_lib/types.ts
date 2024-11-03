@@ -1,13 +1,15 @@
-export type User = {
+export type Profile = {
   id: string;
+  username: string;
   firstname: string;
   lastname: string;
   dateOfBirth: number;
 };
 
-export type FileStat = {
-  id: string;
-  filename: string;
+export type FileReference = {
+  fileId: string;
+  ownerId: string;
+  originalFilename: string;
 };
 
 export type Report = {
@@ -15,6 +17,8 @@ export type Report = {
   title: string;
   text: string;
   createdAt: number;
-  creator: User;
-  files: FileStat[];
+  creatorId: string;
+  fileRefs: FileReference[];
 };
+
+export type SaveReport = Omit<Report, "id" | "fileRefs">;

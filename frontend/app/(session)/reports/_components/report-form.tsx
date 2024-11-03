@@ -4,6 +4,9 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/FileDownload";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { addReport } from "@/app/_actions/report-actions";
+import { useProfile } from "../../_contexts/profile-context";
+import { useReportsDispatch } from "../_contexts/reports-context";
 
 type FormValues = {
   title: string;
@@ -17,6 +20,9 @@ type Props = {
 
 export default function ReportForm({ onClose }: Props) {
   const [files, setFiles] = useState<File[]>([]);
+  const reportsDispatch = useReportsDispatch()!;
+  const profile = useProfile()!;
+
   const {
     handleSubmit,
     register,
@@ -32,13 +38,24 @@ export default function ReportForm({ onClose }: Props) {
     }
 
     event.preventDefault();
+    const formData = new FormData();
 
-    // try {
-    //   await signIn(data.username, data.password);
-    // } catch (error: unknown) {
-    //   resetField("password");
-    //   setError("password", { type: "server", message: (error as Error).message });
-    // }
+    files.forEach((file) => {
+      formData.append("files", file, file.name);
+    });
+
+    try {
+      const addedReport = await addReport(
+        { title: data.title, text: data.text, createdAt: new Date().getTime(), creatorId: profile.id },
+        formData
+      );
+
+      reportsDispatch((prev) => [...prev, addedReport]);
+      onClose();
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.log(err.message);
+    }
   });
 
   return (
@@ -98,7 +115,7 @@ export default function ReportForm({ onClose }: Props) {
             onChange={(e) => {
               const files = e.currentTarget.files;
               if (files != null) {
-                setFiles([files[0]]);
+                setFiles((prev) => [...prev, ...files]);
               }
             }}
           />

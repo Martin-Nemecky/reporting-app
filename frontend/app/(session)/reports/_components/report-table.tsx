@@ -10,13 +10,14 @@ import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import { ChangeEvent, useState } from "react";
-import { Report } from "@/app/_lib/types";
 import { useRouter } from "next/navigation";
+import { useReports } from "../_contexts/reports-context";
+import { formatDate } from "@/app/_lib/utils";
 
-interface Column {
+type Column = {
   id: "title" | "text" | "createdAt" | "numberOfFiles";
   label: string;
-}
+};
 
 const columns: Column[] = [
   { id: "title", label: "Title" },
@@ -25,37 +26,19 @@ const columns: Column[] = [
   { id: "numberOfFiles", label: "Number Of Files" },
 ];
 
-const data: Report[] = [
-  {
-    id: "1",
-    title: "First Report",
-    text: "This is first report.",
-    createdAt: -1,
-    files: [{ id: "file1", filename: "file1.txt" }],
-    creator: { id: "c1", firstname: "Martin", lastname: "N", dateOfBirth: -1 },
-  },
-  {
-    id: "2",
-    title: "Second Report",
-    text: "This is second report.",
-    createdAt: -1,
-    files: [{ id: "file2", filename: "file2.txt" }],
-    creator: { id: "c1", firstname: "Martin", lastname: "N", dateOfBirth: -1 },
-  },
-];
-
-const rows = data.map((d) => ({
-  id: d.id,
-  title: d.title,
-  text: d.text,
-  createdAt: d.createdAt,
-  numberOfFiles: d.files.length,
-}));
-
 export default function ReportTable() {
   const router = useRouter();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const reports = useReports()!;
+
+  const rows = reports.map((report) => ({
+    id: report.id,
+    title: report.title,
+    text: report.text,
+    createdAt: formatDate(report.createdAt),
+    numberOfFiles: report.fileRefs.length,
+  }));
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -92,7 +75,11 @@ export default function ReportTable() {
                 >
                   {columns.map((column) => {
                     const value = row[column.id];
-                    return <TableCell key={column.id}>{value}</TableCell>;
+                    return (
+                      <TableCell key={column.id}>
+                        <p className="line-clamp-1">{value}</p>
+                      </TableCell>
+                    );
                   })}
                 </TableRow>
               );
