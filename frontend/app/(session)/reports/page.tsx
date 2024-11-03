@@ -42,7 +42,7 @@ export default function Reports() {
 
       {open && (
         <MyModal>
-          <ReportForm onClose={handleClose} />
+          <ReportForm type={"create"} onClose={handleClose} />
         </MyModal>
       )}
     </div>

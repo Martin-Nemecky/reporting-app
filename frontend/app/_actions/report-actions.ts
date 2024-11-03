@@ -1,7 +1,16 @@
 "use server";
 
-import { deleteReport, deleteReportFile, findAllReports, findOneReport, findReportFile, saveReport } from "../_lib/api";
-import { Report, SaveReport } from "../_lib/types";
+import {
+  deleteReport,
+  deleteReportFile,
+  findAllReports,
+  findOneReport,
+  findReportFile,
+  saveReport,
+  saveReportFile,
+  updateReport,
+} from "../_lib/api";
+import { FileReference, Report, SaveReport } from "../_lib/types";
 import { getSessionData } from "./session-actions";
 
 export async function getReportById(id: string): Promise<Report> {
@@ -31,13 +40,23 @@ export async function addReport(report: SaveReport, files: FormData): Promise<Re
   return await saveReport(sessionData.accessToken, report, files);
 }
 
-// export async function alterReport() {
-//   return await updateReport();
-// }
+export async function alterReport(reportId: string, report: SaveReport): Promise<Report> {
+  const sessionData = await getSessionData();
+  if (sessionData == null) {
+    throw new Error("Session data are not available.");
+  }
 
-// export async function removeReport() {
-//   return await deleteReport();
-// }
+  return await updateReport(sessionData.accessToken, reportId, report);
+}
+
+export async function addReportFile(reportId: string, files: FormData): Promise<FileReference[]> {
+  const sessionData = await getSessionData();
+  if (sessionData == null) {
+    throw new Error("Session data are not available.");
+  }
+
+  return await saveReportFile(sessionData.accessToken, reportId, files);
+}
 
 export async function removeReportFile(reportId: string, fileId: string) {
   const sessionData = await getSessionData();

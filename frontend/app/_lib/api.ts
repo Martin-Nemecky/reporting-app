@@ -43,8 +43,6 @@ export async function findOneReport(token: string, reportId: string): Promise<Re
 }
 
 export async function saveReport(token: string, report: SaveReport, files: FormData): Promise<Report> {
-  console.log(`Sending report: ${JSON.stringify(report)} and token: ${token}`);
-
   const savedReportPromise = await fetch("https://localhost:8080/api/reports", {
     method: "POST",
     body: JSON.stringify(report),
@@ -56,10 +54,6 @@ export async function saveReport(token: string, report: SaveReport, files: FormD
   });
 
   const savedReport: Report = await savedReportPromise.json();
-
-  console.log(`Form data from api: ${JSON.stringify(files)}`);
-  console.log(...files);
-
   const fileRefsPromise = await fetch(`https://localhost:8080/api/reports/${savedReport.id}/files`, {
     method: "POST",
     body: files,
@@ -72,6 +66,34 @@ export async function saveReport(token: string, report: SaveReport, files: FormD
   savedReport.fileRefs = fileRefs;
 
   return savedReport;
+}
+
+export async function updateReport(token: string, reportId: string, report: SaveReport): Promise<Report> {
+  const updatedReportPromise = await fetch(`https://localhost:8080/api/reports/${reportId}`, {
+    method: "PUT",
+    body: JSON.stringify(report),
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+  });
+
+  const updatedReport = await updatedReportPromise.json();
+  return updatedReport;
+}
+
+export async function saveReportFile(token: string, reportId: string, files: FormData): Promise<FileReference[]> {
+  const fileRefsPromise = await fetch(`https://localhost:8080/api/reports/${reportId}/files`, {
+    method: "POST",
+    body: files,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const fileRefs: FileReference[] = await fileRefsPromise.json();
+  return fileRefs;
 }
 
 export async function deleteReport(token: string, reportId: string): Promise<Report> {
@@ -89,10 +111,7 @@ export async function deleteReportFile(token: string, reportId: string, fileId: 
     headers: { Authorization: `Bearer ${token}` },
   });
 
-  const result = await filename.text();
-  console.log(`Remove file json: ${result}`);
-
-  return result;
+  return await filename.text();
 }
 
 export async function findReportFile(token: string, reportId: string, fileId: string): Promise<Blob> {
@@ -104,26 +123,4 @@ export async function findReportFile(token: string, reportId: string, fileId: st
   });
 
   return await result.blob();
-  // console.log()
-  // return new File([blob], "f.txt");
-
-  // console.log("----");
-
-  // console.log(JSON.stringify(await file.text()));
-
-  // const result = await file.json();
-  // console.log(JSON.stringify(result));
-
-  throw new Error();
-  //return result;
 }
-
-/* 
-https://localhost:8080/api/auth
-https://localhost:8080/api/auth/profile
-
-https://localhost:8080/api/reports
-https://localhost:8080/api/reports/:id
-https://localhost:8080/api/reports/:id/files
-https://localhost:8080/api/reports/:id/files/:fileId
-*/

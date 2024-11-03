@@ -16,8 +16,8 @@ export default function AppBar() {
 
   const handleSignOut = async () => {
     setIsPending(true);
-    await signOut();
     handleClose();
+    await signOut();
   };
 
   return (
