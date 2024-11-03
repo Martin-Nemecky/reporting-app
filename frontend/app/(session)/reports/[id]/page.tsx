@@ -75,7 +75,7 @@ export default function ReportDetail() {
       </header>
       <div className="border rounded-md shadow-lg">
         <main className="mt-2 p-8">
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-2 lg:flex-row items-start justify-between">
             <h1>{report.title}</h1>
             <div className="flex gap-2">
               <Button endIcon={<EditIcon />} color="primary" variant="outlined" onClick={handleOpen}>
