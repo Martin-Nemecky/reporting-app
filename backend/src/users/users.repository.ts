@@ -10,7 +10,7 @@ export class UsersRepository {
       password: 'test', // This property should be hashed and salted in production, but for simplicity I'll leave it for now :)
       firstname: 'Martin',
       lastname: 'N',
-      dateOfBirth: 1730448486182,
+      dateOfBirth: 979698240000,
     },
   ];
 
