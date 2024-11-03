@@ -10,18 +10,18 @@ import {
   StreamableFile,
   UploadedFiles,
   UseInterceptors,
+  Header,
 } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { FileReference, Report, SaveReport } from './entities/types';
-import { SaveReportDto } from './dtos/types';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { createReadStream } from 'fs';
-import { ConfigService } from '@nestjs/config';
 import { FILE_DESTINATION_FOLDER } from 'src/utils/consts';
 import { UserPayload } from 'src/auth/entities/types';
+import { UsersService } from 'src/users/users.service';
 
 type RequestWithPayload = Request & { userPayload: UserPayload };
 
@@ -29,14 +29,18 @@ type RequestWithPayload = Request & { userPayload: UserPayload };
 export class ReportsController {
   constructor(
     private readonly reportsService: ReportsService,
-    private readonly configService: ConfigService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Get()
   async findAllReports(
     @Request() req: RequestWithPayload,
   ): Promise<readonly Report[]> {
-    return await this.reportsService.findAllReports(req.userPayload.id);
+    const reports = await this.reportsService.findAllReports(
+      req.userPayload.id,
+    );
+
+    return reports;
   }
 
   @Get(':id')
@@ -44,30 +48,39 @@ export class ReportsController {
     @Param('id') id: string,
     @Request() req: RequestWithPayload,
   ): Promise<Report> {
-    return await this.reportsService.findOneReport(id, req.userPayload.id);
+    const report = await this.reportsService.findOneReport(
+      id,
+      req.userPayload.id,
+    );
+
+    return report;
   }
 
   @Get(':reportId/files/:fileId')
+  @Header('Content-Type', 'application/octet-stream')
   async findOneReportFile(
     @Param('reportId') reportId: string,
     @Param('fileId') fileId: string,
     @Request() req: RequestWithPayload,
   ) {
-    await this.reportsService.findOneReport(reportId, req.userPayload.id); // verify that the user owns the report !
+    await this.reportsService.findOneReport(reportId, req.userPayload.id); // verify that the user owns the report
     const file = createReadStream(
-      join(process.cwd(), FILE_DESTINATION_FOLDER, fileId, req.userPayload.id),
+      join(process.cwd(), FILE_DESTINATION_FOLDER, fileId),
     );
     return new StreamableFile(file);
   }
 
   @Post()
-  async saveReport(@Body() savedReportDto: SaveReportDto): Promise<Report> {
-    return await this.reportsService.saveReport(savedReportDto);
+  async saveReport(@Body() savedReport: SaveReport): Promise<Report> {
+    await this.usersService.findOneUserById(savedReport.creatorId); // verify that the user exists
+    const report = await this.reportsService.saveReport(savedReport);
+
+    return report;
   }
 
   @Post(':reportId/files')
   @UseInterceptors(
-    FilesInterceptor('files', 10, {
+    AnyFilesInterceptor({
       // Change encoding of the filename to the utf-8 (without this piece of code the original filename can be corrupted)
       // See more at: https://stackoverflow.com/questions/72909624/multer-corrupts-utf8-filename-when-uploading-files
       fileFilter: (_req, file, cb) => {
@@ -101,14 +114,16 @@ export class ReportsController {
   @Put(':id')
   async updateReport(
     @Param('id') id: string,
-    @Body() saveReportDto: SaveReportDto,
+    @Body() saveReport: SaveReport,
     @Request() req: RequestWithPayload,
   ): Promise<Report> {
-    return await this.reportsService.updateReport(
+    const report = await this.reportsService.updateReport(
       id,
-      saveReportDto as SaveReport,
+      saveReport,
       req.userPayload.id,
     );
+
+    return report;
   }
 
   @Delete(':id')
@@ -116,7 +131,12 @@ export class ReportsController {
     @Param('id') id: string,
     @Request() req: RequestWithPayload,
   ): Promise<Report> {
-    return await this.reportsService.deleteReport(id, req.userPayload.id);
+    const report = await this.reportsService.deleteReport(
+      id,
+      req.userPayload.id,
+    );
+
+    return report;
   }
 
   @Delete(':reportId/files/:fileId')

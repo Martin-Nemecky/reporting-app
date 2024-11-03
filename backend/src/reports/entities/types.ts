@@ -1,11 +1,9 @@
-import { Profile } from 'src/users/entities/types';
-
 export type Report = {
   id: string;
   title: string;
   text: string;
   createdAt: number;
-  creator: Profile;
+  creatorId: string;
   fileRefs: FileReference[];
 };
 
