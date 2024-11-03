@@ -6,3 +6,5 @@ export type User = {
   lastname: string;
   dateOfBirth: number;
 };
+
+export type Profile = Omit<User, 'password'>;

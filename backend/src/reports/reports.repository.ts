@@ -12,7 +12,7 @@ export class ReportsRepository {
    */
   private reports: Report[] = [];
 
-  async findOneReport(reportId: string): Promise<Report> {
+  async findOneReport(reportId: string, userId: string): Promise<Report> {
     const foundReport = this.reports.find((report) => report.id === reportId);
 
     if (foundReport == null) {
@@ -20,13 +20,18 @@ export class ReportsRepository {
         `Report with id: ${reportId} was not found.`,
         HttpStatus.NOT_FOUND,
       );
+    } else if (foundReport.creator.id !== userId) {
+      throw new HttpException(
+        `You do not have the permissions to access report with id: ${reportId}.`,
+        HttpStatus.UNAUTHORIZED,
+      );
     }
 
     return foundReport;
   }
 
-  async findAllReports(): Promise<readonly Report[]> {
-    return this.reports;
+  async findAllReports(userId: string): Promise<readonly Report[]> {
+    return this.reports.filter((report) => report.creator.id === userId);
   }
 
   async saveReport(report: SaveReport): Promise<Report> {
@@ -38,11 +43,13 @@ export class ReportsRepository {
   async saveReportFiles(
     reportId: string,
     files: Array<Express.Multer.File>,
+    userId: string,
   ): Promise<readonly FileReference[]> {
-    const foundReport = await this.findOneReport(reportId);
+    const foundReport = await this.findOneReport(reportId, userId);
 
     const fileRefs = files.map((file) => ({
       fileId: file.filename,
+      ownerId: userId,
       originalFilename: file.originalname,
     }));
 
@@ -53,7 +60,9 @@ export class ReportsRepository {
   async updateReport(
     reportId: string,
     reportUpdate: SaveReport,
+    userId: string,
   ): Promise<Report> {
+    await this.findOneReport(reportId, userId); // check permissions
     this.reports = this.reports.map((report) => {
       if (report.id === reportId) {
         return { id: reportId, fileRefs: report.fileRefs, ...reportUpdate };
@@ -62,12 +71,12 @@ export class ReportsRepository {
       }
     });
 
-    const updatedReport = await this.findOneReport(reportId);
+    const updatedReport = await this.findOneReport(reportId, userId);
     return updatedReport;
   }
 
-  async deleteReport(reportId: string): Promise<Report> {
-    const deletedReport = await this.findOneReport(reportId);
+  async deleteReport(reportId: string, userId: string): Promise<Report> {
+    const deletedReport = await this.findOneReport(reportId, userId);
 
     this.reports = this.reports.filter((report) => {
       if (report.id === reportId) {
@@ -80,8 +89,12 @@ export class ReportsRepository {
     return deletedReport;
   }
 
-  async deleteReportFile(reportId: string, fileId: string): Promise<string> {
-    const foundReport = await this.findOneReport(reportId);
+  async deleteReportFile(
+    reportId: string,
+    fileId: string,
+    userId: string,
+  ): Promise<string> {
+    const foundReport = await this.findOneReport(reportId, userId);
     const foundRef = foundReport.fileRefs.find((ref) => ref.fileId === fileId);
     if (foundRef == null) {
       throw new HttpException(

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Request,
   Get,
   Param,
   Post,
@@ -20,6 +21,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { createReadStream } from 'fs';
 import { ConfigService } from '@nestjs/config';
 import { FILE_DESTINATION_FOLDER } from 'src/utils/consts';
+import { UserPayload } from 'src/auth/entities/types';
+
+type RequestWithPayload = Request & { userPayload: UserPayload };
 
 @Controller({ path: 'reports' })
 export class ReportsController {
@@ -29,26 +33,36 @@ export class ReportsController {
   ) {}
 
   @Get()
-  async findAllReports(): Promise<readonly Report[]> {
-    return await this.reportsService.findAllReports();
+  async findAllReports(
+    @Request() req: RequestWithPayload,
+  ): Promise<readonly Report[]> {
+    return await this.reportsService.findAllReports(req.userPayload.id);
   }
 
   @Get(':id')
-  async findOneReport(@Param('id') id: string): Promise<Report> {
-    return await this.reportsService.findOneReport(id);
+  async findOneReport(
+    @Param('id') id: string,
+    @Request() req: RequestWithPayload,
+  ): Promise<Report> {
+    return await this.reportsService.findOneReport(id, req.userPayload.id);
   }
 
   @Get(':reportId/files/:fileId')
-  async findOneReportFile(@Param('fileId') fileId: string) {
+  async findOneReportFile(
+    @Param('reportId') reportId: string,
+    @Param('fileId') fileId: string,
+    @Request() req: RequestWithPayload,
+  ) {
+    await this.reportsService.findOneReport(reportId, req.userPayload.id); // verify that the user owns the report !
     const file = createReadStream(
-      join(process.cwd(), FILE_DESTINATION_FOLDER, fileId),
+      join(process.cwd(), FILE_DESTINATION_FOLDER, fileId, req.userPayload.id),
     );
     return new StreamableFile(file);
   }
 
   @Post()
-  async saveReport(@Body() saveReportDto: SaveReportDto): Promise<Report> {
-    return await this.reportsService.saveReport(saveReportDto);
+  async saveReport(@Body() savedReportDto: SaveReportDto): Promise<Report> {
+    return await this.reportsService.saveReport(savedReportDto);
   }
 
   @Post(':reportId/files')
@@ -75,31 +89,46 @@ export class ReportsController {
   async saveReportFiles(
     @Param('reportId') reportId: string,
     @UploadedFiles() files: Array<Express.Multer.File>,
+    @Request() req: RequestWithPayload,
   ): Promise<readonly FileReference[]> {
-    return await this.reportsService.saveReportFiles(reportId, files);
+    return await this.reportsService.saveReportFiles(
+      reportId,
+      files,
+      req.userPayload.id,
+    );
   }
 
   @Put(':id')
   async updateReport(
     @Param('id') id: string,
     @Body() saveReportDto: SaveReportDto,
+    @Request() req: RequestWithPayload,
   ): Promise<Report> {
     return await this.reportsService.updateReport(
       id,
       saveReportDto as SaveReport,
+      req.userPayload.id,
     );
   }
 
   @Delete(':id')
-  async deleteReport(@Param('id') id: string): Promise<Report> {
-    return await this.reportsService.deleteReport(id);
+  async deleteReport(
+    @Param('id') id: string,
+    @Request() req: RequestWithPayload,
+  ): Promise<Report> {
+    return await this.reportsService.deleteReport(id, req.userPayload.id);
   }
 
   @Delete(':reportId/files/:fileId')
   async deleteReportFile(
     @Param('reportId') reportId: string,
     @Param('fileId') fileId: string,
+    @Request() req: RequestWithPayload,
   ): Promise<string> {
-    return await this.reportsService.deleteReportFile(reportId, fileId);
+    return await this.reportsService.deleteReportFile(
+      reportId,
+      fileId,
+      req.userPayload.id,
+    );
   }
 }

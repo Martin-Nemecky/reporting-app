@@ -14,7 +14,7 @@ export class UsersRepository {
     },
   ];
 
-  async findOne(username: string): Promise<User | undefined> {
+  async findOneUser(username: string): Promise<User | undefined> {
     const foundUser = this.users.find((user) => user.username === username);
 
     if (foundUser == null) {

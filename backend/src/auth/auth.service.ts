@@ -14,7 +14,7 @@ export class AuthService {
     username: string,
     pass: string,
   ): Promise<{ access_token: string }> {
-    const user = await this.usersService.findOne(username);
+    const user = await this.usersService.findOneUser(username);
     if (user?.password !== pass) {
       throw new UnauthorizedException();
     }
@@ -25,6 +25,6 @@ export class AuthService {
   }
 
   async getProfile(userPayload: UserPayload) {
-    return await this.usersService.findOne(userPayload.username);
+    return await this.usersService.findOneUser(userPayload.username);
   }
 }
