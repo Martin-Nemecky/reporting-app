@@ -11,7 +11,7 @@ import { useReports, useReportsDispatch } from "../_contexts/reports-context";
 import { addReportFile, getReportFile, removeReport, removeReportFile } from "@/app/_actions/report-actions";
 import * as lodash from "lodash";
 import { calculateAge, formatDate } from "@/app/_lib/utils";
-import { useRef, useState } from "react";
+import { ChangeEvent, useRef, useState } from "react";
 import { useProfile } from "../../_contexts/profile-context";
 import MyModal from "@/app/_components/my-modal";
 import ReportForm from "../_components/report-form";
@@ -21,7 +21,7 @@ export default function ReportDetail() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const profile = useProfile()!;
-  const downloadRef = useRef<HTMLAnchorElement | null>(null);
+  const downloadAnchorRef = useRef<HTMLAnchorElement | null>(null);
   const reportsDispatch = useReportsDispatch()!;
   const report = useReports().find((r) => r.id === params.id)!;
   const userAge = calculateAge(new Date(profile.dateOfBirth));
@@ -46,22 +46,46 @@ export default function ReportDetail() {
   }
 
   async function handleFileDownload(fileId: string, originalFilename: string) {
-    if (downloadRef.current == null) {
+    if (downloadAnchorRef.current == null) {
       return;
     }
 
     const blob = await getReportFile(report.id, fileId);
     const file = new File([blob], originalFilename);
     const url = URL.createObjectURL(file);
-    downloadRef.current.href = url;
-    downloadRef.current.download = originalFilename;
-    downloadRef.current.click();
+    downloadAnchorRef.current.href = url;
+    downloadAnchorRef.current.download = originalFilename;
+    downloadAnchorRef.current.click();
     URL.revokeObjectURL(url);
   }
 
   async function handleReportRemove() {
     await removeReport(report.id);
     router.push("/reports");
+  }
+
+  async function handleFileInputChange(e: ChangeEvent<HTMLInputElement>) {
+    const files = e.currentTarget.files;
+    if (files != null) {
+      const formData = new FormData();
+
+      for (let i = 0; i < files.length; i++) {
+        formData.append("files", files.item(i)!, files.item(i)!.name);
+      }
+
+      const fileRefs = await addReportFile(report.id, formData);
+      reportsDispatch((prev) => {
+        return prev.map((rep) => {
+          if (rep.id === report.id) {
+            const repClone = lodash.cloneDeep(rep);
+            repClone.fileRefs.push(...fileRefs);
+            return repClone;
+          } else {
+            return lodash.cloneDeep(rep);
+          }
+        });
+      });
+    }
   }
 
   return (
@@ -96,37 +120,11 @@ export default function ReportDetail() {
                 <AddCircleIcon />
                 Add File
               </label>
-              <input
-                id="file-upload"
-                type="file"
-                className="hidden"
-                onChange={async (e) => {
-                  const files = e.currentTarget.files;
-                  if (files != null) {
-                    const formData = new FormData();
-
-                    for (let i = 0; i < files.length; i++) {
-                      formData.append("files", files.item(i)!, files.item(i)!.name);
-                    }
-
-                    const fileRefs = await addReportFile(report.id, formData);
-                    reportsDispatch((prev) => {
-                      return prev.map((rep) => {
-                        if (rep.id === report.id) {
-                          const repClone = lodash.cloneDeep(rep);
-                          repClone.fileRefs.push(...fileRefs);
-                          return repClone;
-                        } else {
-                          return lodash.cloneDeep(rep);
-                        }
-                      });
-                    });
-                  }
-                }}
-              />
+              <input id="file-upload" type="file" className="hidden" onChange={handleFileInputChange} />
             </div>
           </div>
 
+          {/* LIST OF FILES */}
           <List dense={false}>
             {report.fileRefs.map((file) => (
               <ListItem
@@ -134,14 +132,10 @@ export default function ReportDetail() {
                 className="border"
                 secondaryAction={
                   <>
-                    <a
-                      onClick={() => handleFileDownload(file.fileId, file.originalFilename)}
-                      className="relative top-[1.2px]"
-                    >
-                      <IconButton>
-                        <DownloadIcon />
-                      </IconButton>
-                    </a>
+                    <IconButton onClick={() => handleFileDownload(file.fileId, file.originalFilename)}>
+                      <DownloadIcon />
+                    </IconButton>
+
                     <IconButton onClick={async () => await handleFileRemove(file.fileId)}>
                       <DeleteIcon />
                     </IconButton>
@@ -159,8 +153,8 @@ export default function ReportDetail() {
             <strong>{profile.firstname + " " + profile.lastname}</strong> ({userAge} y. o.)
           </p>
         </footer>
+        <a ref={downloadAnchorRef} className="hidden" />
       </div>
-      <a ref={downloadRef} />
 
       {open && (
         <MyModal>

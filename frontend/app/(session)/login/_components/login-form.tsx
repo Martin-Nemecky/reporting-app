@@ -34,7 +34,6 @@ export default function LoginForm() {
 
     try {
       const profile = await logIn(data.username, data.password);
-      console.log(`Profile: ${JSON.stringify(profile)}`);
       profileDispatch(profile);
       router.push(searchParams.get("from") || "reports/");
     } catch (error: unknown) {

@@ -26,6 +26,14 @@ export default function ReportForm({ type, defaultReport, onClose }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const reportsDispatch = useReportsDispatch()!;
   const profile = useProfile()!;
+  const {
+    handleSubmit,
+    register,
+    control,
+    formState: { isSubmitting, isSubmitSuccessful },
+  } = useForm<FormValues>({
+    defaultValues: { title: defaultReport?.title || "", text: defaultReport?.text || "" },
+  });
 
   let headerText = "",
     confirmButtonText = "",
@@ -44,15 +52,6 @@ export default function ReportForm({ type, defaultReport, onClose }: Props) {
       break;
     }
   }
-
-  const {
-    handleSubmit,
-    register,
-    control,
-    formState: { isSubmitting, isSubmitSuccessful },
-  } = useForm<FormValues>({
-    defaultValues: { title: defaultReport?.title || "", text: defaultReport?.text || "" },
-  });
 
   const onSubmit = handleSubmit(async (data, event) => {
     if (event == null) {

@@ -7,7 +7,6 @@ import { Profile } from "../_lib/types";
 
 export async function logIn(username: string, password: string): Promise<Profile> {
   const signInResult = await signIn(username, password);
-  // console.log(`Log in: ${JSON.stringify(signInResult)}`);
   const profile = await getProfile(signInResult.accessToken);
 
   await createSession(profile.id, signInResult.accessToken);
