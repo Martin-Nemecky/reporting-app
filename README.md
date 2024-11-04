@@ -22,7 +22,7 @@ npm install
 npm run dev
 ```
 
-Open [https://localhost:3000](https://localhost:3000) with your browser to see the result.
+Open [https://localhost:3000](https://localhost:3000) with your browser to see the result. Please use `test` as username and `test` as password on the login page.
 
 ## Notes
 
