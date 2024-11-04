@@ -17,6 +17,11 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+## Used Technologies
+
+- NestJS
+- TypeScript
+
 ## Technique used for generating secrets:
 
 ```

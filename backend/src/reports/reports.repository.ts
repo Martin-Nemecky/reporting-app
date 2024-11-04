@@ -103,7 +103,6 @@ export class ReportsRepository {
     const foundReport = await this.findOneReport(reportId, userId);
     const foundRef = foundReport.fileRefs.find((ref) => ref.fileId === fileId);
     if (foundRef == null) {
-      console.log('exp');
       throw new HttpException(
         `File with id: ${fileId} was not found.`,
         HttpStatus.NOT_FOUND,
